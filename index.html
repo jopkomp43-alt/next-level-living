@@ -3,9 +3,9 @@ import { ShoppingCart, ChefHat, Clock, CheckCircle, ArrowRight, Star, Truck, X, 
 
 const App = () => {
     const [isModalOpen, setIsModalOpen] = useState(false);
-    const [selectedProduct, setSelectedProduct] = useState(null); // Nu slaan we het hele object op
+    const [selectedProduct, setSelectedProduct] = useState(null);
     const [formSubmitted, setFormSubmitted] = useState(false);
-    const [wantsUpgrade, setWantsUpgrade] = useState(false); // State voor de upgrade
+    const [wantsUpgrade, setWantsUpgrade] = useState(false);
     
     // State voor de Restjes Generator
     const [leftoverInput, setLeftoverInput] = useState('');
@@ -141,6 +141,7 @@ const App = () => {
         }
     ];
 
+    // Inline styles for the background pattern
     const heroPatternStyle = {
         backgroundColor: '#f3f4f6',
         backgroundImage: 'radial-gradient(#3b82f6 0.5px, #f3f4f6 0.5px)',
@@ -215,7 +216,7 @@ const App = () => {
                 </div>
             </header>
 
-            {/* Restjes Tool (Ongewijzigd) */}
+            {/* Restjes Tool */}
             <section id="restjes-tool" className="py-20 bg-blue-50">
                 <div className="container mx-auto px-6">
                     <div className="max-w-3xl mx-auto text-center">
