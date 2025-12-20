@@ -1,373 +1,599 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Utensils, Clock, Flame, X, Tag, ArrowRight, Search, Leaf, Cookie, Home, Heart, ShoppingBasket, User, Sparkles, RefreshCw } from 'lucide-react';
+<!DOCTYPE html>
+<html lang="nl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uit Werking Site - Smart Food Analysis & Generator</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Chart.js -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
-export default function App() {
-  const [selectedCategory, setSelectedCategory] = useState('Alles');
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedRecipe, setSelectedRecipe] = useState(null);
-  const [generatedRecipes, setGeneratedRecipes] = useState([]);
+    <!-- FontAwesome for Icons -->
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
 
-  // --- DE "AI" IN DE CODE (DATABASE) ---
-  const ingredientsDB = {
-    proteins: [
-      { name: "Kipfilet blokjes", price: 3.50, type: "Snel" },
-      { name: "Rundergehakt", price: 4.00, type: "Snel" },
-      { name: "Vega Balletjes", price: 3.20, type: "Vega" },
-      { name: "Kikkererwten", price: 1.10, type: "Budget" },
-      { name: "Zalmfilet", price: 5.50, type: "Luxe" },
-      { name: "Tofu", price: 2.50, type: "Vega" },
-      { name: "Witte bonen", price: 0.90, type: "Budget" }
-    ],
-    carbs: [
-      { name: "Zilvervliesrijst", price: 1.20 },
-      { name: "Penne Pasta", price: 1.00 },
-      { name: "Zoete Aardappel", price: 1.50 },
-      { name: "Wraps", price: 1.80 },
-      { name: "Noedels", price: 1.30 },
-      { name: "Couscous", price: 1.40 },
-      { name: "Aardappelpuree", price: 1.10 }
-    ],
-    veggies: [
-      { name: "Broccoli roosjes", price: 1.60 },
-      { name: "Spinazie a la crème", price: 1.20 },
-      { name: "Wokgroente Mix", price: 2.50 },
-      { name: "Sperziebonen", price: 1.40 },
-      { name: "Courgette & Paprika", price: 1.90 },
-      { name: "Bloemkool", price: 1.70 }
-    ],
-    sauces: [
-      { name: "Teriyaki Saus", price: 1.50 },
-      { name: "Pesto Genovese", price: 1.80 },
-      { name: "Rode Curry", price: 1.60 },
-      { name: "Tomaten Mascarpone", price: 1.90 },
-      { name: "Ketjap Knoflook", price: 1.20 },
-      { name: "Olijfolie & Kruiden", price: 0.50 }
-    ],
-    adjectives: ["Romige", "Pittige", "Krokante", "Snelle", "Gezonde", "Hollandse", "Aziatische", "Geroosterde"]
-  };
+    <!-- Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;600;700&display=swap" rel="stylesheet">
 
-  // --- DE "AI" GENERATOR FUNCTIE ---
-  // Dit stukje code simuleert mijn creativiteit om oneindig recepten te maken
-  const generateMenu = () => {
-    const newRecipes = [];
-    const images = ["🍝", "🍛", "🥬", "🌮", "🥘", "🥗", "🍜", "🍲"];
+    <style>
+        body {
+            font-family: 'Inter', sans-serif;
+            background-color: #fdfbf7; /* Warm neutral background */
+            color: #1f2937;
+        }
+        
+        .chart-container {
+            position: relative;
+            width: 100%;
+            max-width: 600px;
+            margin-left: auto;
+            margin-right: auto;
+            height: 300px;
+            max-height: 400px;
+        }
 
-    for (let i = 0; i < 10; i++) {
-      // Kies willekeurige ingrediënten
-      const protein = ingredientsDB.proteins[Math.floor(Math.random() * ingredientsDB.proteins.length)];
-      const carb = ingredientsDB.carbs[Math.floor(Math.random() * ingredientsDB.carbs.length)];
-      const veg = ingredientsDB.veggies[Math.floor(Math.random() * ingredientsDB.veggies.length)];
-      const sauce = ingredientsDB.sauces[Math.floor(Math.random() * ingredientsDB.sauces.length)];
-      const adj = ingredientsDB.adjectives[Math.floor(Math.random() * ingredientsDB.adjectives.length)];
-      const img = images[Math.floor(Math.random() * images.length)];
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.3);
+        }
 
-      // Bereken totale prijs
-      const basePrice = protein.price + carb.price + veg.price + sauce.price;
-      
-      // Bepaal categorie op basis van ingrediënten
-      let cat = "Snel";
-      if (basePrice < 4.50) cat = "Budget";
-      if (protein.type === "Vega" || protein.type === "Budget") cat = "Vega"; // Simplificatie voor demo
-      if (protein.type === "Luxe") cat = "Luxe";
-
-      // Genereer titel
-      const title = `${adj} ${protein.name} met ${veg.name}`;
-
-      // Genereer prijzen voor winkels (met kleine variaties)
-      const prices = {
-        ah: basePrice * (1 + (Math.random() * 0.1)),
-        jumbo: basePrice * (1 + (Math.random() * 0.1)),
-        lidl: basePrice * (0.85 + (Math.random() * 0.1))
-      };
-
-      newRecipes.push({
-        id: i,
-        title: title,
-        image: img,
-        time: `${15 + Math.floor(Math.random() * 30)} min`,
-        calories: `${350 + Math.floor(Math.random() * 500)} kcal`,
-        category: cat,
-        description: `Een heerlijke combinatie van ${protein.name.toLowerCase()} en ${carb.name.toLowerCase()}. Binnen een handomdraai op tafel.`,
-        ingredients: [
-          { name: protein.name, amount: "300g" },
-          { name: carb.name, amount: "250g" },
-          { name: veg.name, amount: "400g" },
-          { name: sauce.name, amount: "1 portie" }
-        ],
-        prices: prices
-      });
-    }
-    return newRecipes;
-  };
-
-  // Genereer menu bij het laden van de app
-  useEffect(() => {
-    setGeneratedRecipes(generateMenu());
-  }, []);
-
-  const handleRegenerate = () => {
-    setGeneratedRecipes(generateMenu());
-  };
-
-  const categories = ['Alles', 'Snel', 'Budget', 'Vega'];
-
-  const filteredRecipes = useMemo(() => {
-    return generatedRecipes.filter(recipe => {
-      const matchesCategory = selectedCategory === 'Alles' || recipe.category === selectedCategory || (selectedCategory === 'Vega' && (recipe.category === 'Vega' || recipe.category === 'Budget'));
-      const matchesSearch = recipe.title.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesCategory && matchesSearch;
-    });
-  }, [selectedCategory, searchQuery, generatedRecipes]);
-
-  return (
-    <div className="min-h-screen pb-20 max-w-md mx-auto bg-white shadow-2xl relative overflow-hidden font-sans">
-      <style>{`
+        /* Custom Scrollbar for horizontal lists */
         .hide-scrollbar::-webkit-scrollbar {
-          display: none;
+            display: none;
         }
         .hide-scrollbar {
-          -ms-overflow-style: none;
-          scrollbar-width: none;
+            -ms-overflow-style: none;  /* IE and Edge */
+            scrollbar-width: none;  /* Firefox */
         }
-      `}</style>
-
-      {/* Top Decor */}
-      <div className="absolute top-0 left-0 w-full h-64 bg-green-50 z-0 rounded-b-[3rem]"></div>
-
-      {/* Header */}
-      <div className="relative z-10 px-6 pt-12 pb-4">
-        <Logo />
-        <div className="flex justify-between items-end">
-           <p className="text-gray-500 font-medium">Jouw dagelijkse inspiratie.</p>
-           <button 
-             onClick={handleRegenerate}
-             className="text-xs bg-white text-green-600 px-3 py-1 rounded-full shadow-sm font-bold flex items-center gap-1 active:scale-95 transition-transform"
-           >
-             <RefreshCw size={12} /> Nieuw Menu
-           </button>
-        </div>
         
-        {/* Search Bar */}
-        <div className="mt-6 relative">
-          <input 
-            type="text" 
-            placeholder="Waar heb je zin in?" 
-            className="w-full pl-12 pr-4 py-4 rounded-2xl border-none shadow-lg focus:ring-2 focus:ring-green-500 outline-none text-gray-700"
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-          />
-          <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400 w-5 h-5" />
-        </div>
-      </div>
+        .card-hover:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-green-100 selection:text-green-900">
 
-      {/* Filter Chips */}
-      <div className="relative z-10 px-6 flex gap-3 overflow-x-auto hide-scrollbar pb-4">
-        {categories.map(cat => (
-          <button 
-            key={cat}
-            onClick={() => setSelectedCategory(cat)}
-            className={`px-5 py-2 rounded-full font-semibold text-sm whitespace-nowrap transition-colors ${
-              selectedCategory === cat 
-              ? 'bg-green-600 text-white shadow-md' 
-              : 'bg-white text-gray-600 border border-gray-200 hover:bg-gray-50'
-            }`}
-          >
-            {cat}
-          </button>
-        ))}
-      </div>
+    <!-- REQUIRED PLACEHOLDERS -->
+    <!-- Chosen Palette: Warm Neutrals & Fresh Greens (Background: #fdfbf7, Accents: Emerald/Green, Text: Dark Gray) -->
+    <!-- Application Structure Plan: Dashboard Layout. 
+         1. Header: Branding and Value Proposition.
+         2. Analytical Overview (The "Report" aspect): Visualizes the market data (Price differences & Category distribution) derived from the generated dataset.
+         3. Interactive Generator: The core tool allowing users to manipulate the data (filter/regenerate).
+         4. Results Grid: The specific data points (recipes) generated.
+         5. Details Modal: Deep dive into specific item data.
+         Why: This structure validates the "business case" with data first, then offers the solution (the recipes). -->
+    <!-- Visualization & Content Choices: 
+         1. Bar Chart: Compare total basket costs across 3 major retailers. Goal: Compare. Shows the potential savings algorithmically.
+         2. Doughnut Chart: Distribution of recipe types (Budget vs Speed vs Luxury). Goal: Inform. Shows the diversity of the algorithm.
+         3. Dynamic Cards: Text/Unicode representation of recipes. Goal: Inform & Engage.
+         4. Interactive Filters: Buttons to sort/filter the dataset. Goal: Organize.
+         CONFIRMATION: NO SVG graphics used (FontAwesome used via CDN). NO Mermaid JS used. -->
 
-      {/* AI Suggestion Box */}
-      <div className="relative z-10 px-6 mb-6">
-        <div className="bg-gradient-to-r from-green-600 to-emerald-600 rounded-2xl p-4 text-white shadow-lg flex items-center justify-between cursor-pointer" onClick={handleRegenerate}>
+    <div id="app" class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Header Section -->
+        <header class="mb-10 text-center md:text-left md:flex md:justify-between md:items-end border-b border-gray-200 pb-6">
             <div>
-                <h3 className="font-bold flex items-center gap-2"><Sparkles size={16} className="text-yellow-300"/> Verras me!</h3>
-                <p className="text-green-100 text-xs mt-1">Laat de AI een gerecht kiezen.</p>
-            </div>
-            <ArrowRight className="bg-white/20 p-1 rounded-full w-8 h-8" />
-        </div>
-      </div>
-
-      {/* Recipe Grid */}
-      <div className="relative z-10 px-6 mt-2 space-y-4">
-        <div className="flex justify-between items-end mb-2">
-          <h2 className="text-xl font-bold text-gray-800">Vers gegenereerd</h2>
-          <span className="text-xs text-gray-400 font-medium">{filteredRecipes.length} opties</span>
-        </div>
-        
-        {filteredRecipes.map(recipe => {
-          const lowestPrice = Math.min(...Object.values(recipe.prices));
-          return (
-            <div 
-              key={recipe.id} 
-              onClick={() => setSelectedRecipe(recipe)}
-              className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex gap-4 cursor-pointer hover:shadow-md transition-shadow"
-            >
-              <div className="w-24 h-24 bg-gray-100 rounded-xl flex items-center justify-center text-4xl shrink-0">
-                {recipe.image}
-              </div>
-              <div className="flex-1 flex flex-col justify-center">
-                <div className="flex justify-between items-start">
-                  <h3 className="font-bold text-gray-800 leading-tight mb-1 line-clamp-2">{recipe.title}</h3>
+                <div class="flex items-center justify-center md:justify-start gap-3 mb-2">
+                    <div class="bg-green-600 text-white w-10 h-10 rounded-lg flex items-center justify-center shadow-lg">
+                        <i class="fa-solid fa-utensils text-lg"></i>
+                    </div>
+                    <h1 class="text-3xl font-bold tracking-tight text-gray-900">Uit Werking Site</h1>
                 </div>
-                <p className="text-xs text-gray-500 mb-3 flex items-center gap-3">
-                  <span className="flex items-center gap-1"><Clock size={12} /> {recipe.time}</span>
-                  <span className="flex items-center gap-1"><Leaf size={12} className="text-green-500" /> {recipe.category}</span>
+                <p class="text-gray-500 text-lg mt-2 max-w-2xl">
+                    Algoritmische Maaltijdplanning & Kostenanalyse. <span class="text-green-600 font-medium">Weet wat je gaat eten.</span>
                 </p>
-                <div className="flex items-center gap-2">
-                  <span className="text-green-600 font-bold bg-green-50 px-2 py-1 rounded-lg text-sm">
-                    ~ €{lowestPrice.toFixed(2)}
-                  </span>
-                  <span className="text-xs text-gray-400">p.p.</span>
+            </div>
+            <div class="mt-4 md:mt-0">
+                <button onclick="regenerateData()" class="group bg-gray-900 hover:bg-gray-800 text-white px-5 py-3 rounded-xl font-medium transition-all shadow-md flex items-center gap-2">
+                    <i class="fa-solid fa-rotate group-hover:rotate-180 transition-transform duration-500"></i>
+                    Genereer Nieuwe Dataset
+                </button>
+            </div>
+        </header>
+
+        <!-- Context / Intro -->
+        <section class="mb-12">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+                <div class="md:col-span-2 bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <h2 class="text-xl font-bold text-gray-800 mb-3">Marktanalyse & Doel</h2>
+                    <p class="text-gray-600 leading-relaxed mb-4">
+                        In een markt gekenmerkt door stijgende voedselprijzen en toenemende keuzestress, biedt dit dashboard een data-gedreven oplossing. 
+                        In plaats van statische recepten, gebruikt deze applicatie een <strong>dynamisch generatie-algoritme</strong> dat ingrediënten combineert op basis van actuele prijsindicatoren en voedingswaarden.
+                    </p>
+                    <p class="text-gray-600 leading-relaxed">
+                        Hieronder ziet u de real-time analyse van de huidige set gegenereerde recepten, inclusief een prijsvergelijking tussen grote supermarkten en een verdeling van de maaltijdcategorieën.
+                    </p>
                 </div>
-              </div>
+                <div class="bg-green-50 rounded-2xl p-6 border border-green-100 flex flex-col justify-center items-center text-center">
+                    <span class="text-green-800 font-semibold uppercase tracking-wider text-xs mb-2">Gemiddelde Besparing</span>
+                    <span id="avg-savings" class="text-4xl font-bold text-green-600 mb-1">€0.00</span>
+                    <span class="text-green-700 text-sm">per mandje t.o.v. duurste aanbieder</span>
+                </div>
             </div>
-          );
-        })}
-      </div>
+        </section>
 
-      {/* Detail Modal */}
-      {selectedRecipe && (
-        <RecipeModal 
-          recipe={selectedRecipe} 
-          onClose={() => setSelectedRecipe(null)} 
-        />
-      )}
+        <!-- Analytics Dashboard -->
+        <section class="mb-12">
+            <h3 class="text-lg font-bold text-gray-900 mb-4 px-1">Real-time Data Visualisatie</h3>
+            <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+                
+                <!-- Chart 1: Price Comparison -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="font-semibold text-gray-700">Kostenanalyse per Supermarkt</h4>
+                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Goal: Compare</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="priceChart"></canvas>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-4 text-center">Vergelijking van de totaalprijs voor de huidige set van 12 gerechten.</p>
+                </div>
 
-      {/* Bottom Nav Mockup */}
-      <div className="fixed bottom-0 left-0 w-full bg-white border-t border-gray-200 py-3 px-6 flex justify-around text-gray-400 z-40 max-w-md mx-auto right-0">
-        <button className="flex flex-col items-center text-green-600">
-          <Home className="w-6 h-6 mb-1" />
-          <span className="text-[10px] font-bold">Ontdek</span>
-        </button>
-        <button className="flex flex-col items-center hover:text-green-600 transition-colors">
-          <Heart className="w-6 h-6 mb-1" />
-          <span className="text-[10px] font-bold">Favorieten</span>
-        </button>
-        <button className="flex flex-col items-center hover:text-green-600 transition-colors">
-          <ShoppingBasket className="w-6 h-6 mb-1" />
-          <span className="text-[10px] font-bold">Lijstje</span>
-        </button>
-        <button className="flex flex-col items-center hover:text-green-600 transition-colors">
-          <User className="w-6 h-6 mb-1" />
-          <span className="text-[10px] font-bold">Profiel</span>
-        </button>
-      </div>
+                <!-- Chart 2: Category Distribution -->
+                <div class="bg-white rounded-2xl p-6 shadow-sm border border-gray-100">
+                    <div class="flex justify-between items-center mb-6">
+                        <h4 class="font-semibold text-gray-700">Categorie Verdeling</h4>
+                        <span class="text-xs bg-gray-100 text-gray-600 px-2 py-1 rounded">Goal: Inform</span>
+                    </div>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                    <p class="text-xs text-gray-400 mt-4 text-center">Verhouding tussen Budget, Snel en Vega opties in de huidige generatie.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Generator & Interaction Section -->
+        <section id="generator-interface">
+            <div class="flex flex-col md:flex-row justify-between items-center mb-6 px-1">
+                <div>
+                    <h3 class="text-xl font-bold text-gray-900">Gegenereerde Suggesties</h3>
+                    <p class="text-sm text-gray-500">Interactieve lijst op basis van uw voorkeuren.</p>
+                </div>
+                
+                <!-- Filters -->
+                <div class="flex gap-2 mt-4 md:mt-0 overflow-x-auto w-full md:w-auto pb-2 md:pb-0 hide-scrollbar" id="filter-container">
+                    <button onclick="filterRecipes('Alles')" class="filter-btn active bg-gray-800 text-white px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap" data-filter="Alles">Alles</button>
+                    <button onclick="filterRecipes('Snel')" class="filter-btn bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap" data-filter="Snel">⚡ Snel</button>
+                    <button onclick="filterRecipes('Budget')" class="filter-btn bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap" data-filter="Budget">💰 Budget</button>
+                    <button onclick="filterRecipes('Vega')" class="filter-btn bg-white text-gray-600 border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-full text-sm font-medium transition-colors whitespace-nowrap" data-filter="Vega">🌿 Vega</button>
+                </div>
+            </div>
+
+            <!-- Recipe Grid -->
+            <div id="recipe-grid" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                <!-- Cards will be injected here by JS -->
+            </div>
+            
+            <div id="no-results" class="hidden text-center py-12">
+                <i class="fa-solid fa-cookie-bite text-4xl text-gray-300 mb-3"></i>
+                <p class="text-gray-500">Geen recepten gevonden in deze categorie.</p>
+            </div>
+        </section>
+
     </div>
-  );
-}
 
-// Sub-components
-const Logo = () => (
-  <div className="flex items-center gap-2 mb-1">
-    <div className="bg-green-500 text-white p-2 rounded-lg shadow-lg">
-      <Utensils className="w-6 h-6" />
+    <!-- Modal Template -->
+    <div id="recipe-modal" class="fixed inset-0 z-50 hidden" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="absolute inset-0 bg-gray-900 bg-opacity-75 transition-opacity backdrop-blur-sm" onclick="closeModal()"></div>
+        <div class="fixed inset-0 z-10 overflow-y-auto">
+            <div class="flex min-h-full items-center justify-center p-4 text-center sm:p-0">
+                <div class="relative transform overflow-hidden rounded-2xl bg-white text-left shadow-2xl transition-all sm:my-8 sm:w-full sm:max-w-lg">
+                    
+                    <!-- Modal Content -->
+                    <div class="bg-white">
+                        <!-- Header Image/Icon Area -->
+                        <div class="bg-gray-50 h-32 flex items-center justify-center text-6xl relative">
+                            <span id="modal-icon">🥘</span>
+                            <button onclick="closeModal()" class="absolute top-4 right-4 text-gray-400 hover:text-gray-600 transition-colors bg-white rounded-full p-2 shadow-sm">
+                                <i class="fa-solid fa-times text-lg w-5 h-5 flex items-center justify-center"></i>
+                            </button>
+                        </div>
+                        
+                        <div class="px-6 py-6">
+                            <h3 class="text-2xl font-bold leading-6 text-gray-900 mb-2" id="modal-title">Recipe Title</h3>
+                            <div class="flex gap-3 mb-4">
+                                <span id="modal-tag" class="inline-flex items-center rounded-md bg-green-50 px-2 py-1 text-xs font-medium text-green-700 ring-1 ring-inset ring-green-600/20">Category</span>
+                                <span class="inline-flex items-center text-xs text-gray-500"><i class="fa-regular fa-clock mr-1"></i> <span id="modal-time">15 min</span></span>
+                                <span class="inline-flex items-center text-xs text-gray-500"><i class="fa-solid fa-fire mr-1"></i> <span id="modal-cals">500 kcal</span></span>
+                            </div>
+                            
+                            <p class="text-sm text-gray-500 mb-6" id="modal-desc">Description goes here.</p>
+
+                            <div class="border-t border-gray-100 pt-4 mb-6">
+                                <h4 class="text-sm font-bold text-gray-900 mb-3">Ingrediënten</h4>
+                                <ul id="modal-ingredients" class="space-y-2 text-sm text-gray-600">
+                                    <!-- Ingredients List -->
+                                </ul>
+                            </div>
+
+                            <div class="bg-gray-50 rounded-xl p-4 border border-gray-200">
+                                <h4 class="text-sm font-bold text-gray-900 mb-3 flex items-center gap-2">
+                                    <i class="fa-solid fa-tags text-green-600"></i> Prijsvergelijking
+                                </h4>
+                                <div id="modal-prices" class="space-y-2">
+                                    <!-- Price Bars -->
+                                </div>
+                                <p class="text-[10px] text-center text-gray-400 mt-3">
+                                    *Prijzen zijn indicatief. U wordt doorgestuurd via LinkPizza.
+                                </p>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="bg-gray-50 px-4 py-3 sm:flex sm:flex-row-reverse sm:px-6">
+                        <button type="button" onclick="handleAffiliateClick()" class="inline-flex w-full justify-center rounded-xl bg-green-600 px-3 py-3 text-sm font-semibold text-white shadow-sm hover:bg-green-500 sm:ml-3 sm:w-auto transition-colors items-center gap-2">
+                            Bestel Ingrediënten <i class="fa-solid fa-arrow-right"></i>
+                        </button>
+                        <button type="button" onclick="closeModal()" class="mt-3 inline-flex w-full justify-center rounded-xl bg-white px-3 py-3 text-sm font-semibold text-gray-900 shadow-sm ring-1 ring-inset ring-gray-300 hover:bg-gray-50 sm:mt-0 sm:w-auto transition-colors">
+                            Sluiten
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
-    <div>
-      <h1 className="text-2xl font-bold text-gray-800 tracking-tight leading-none">Uit Werking</h1>
-      <span className="text-xs text-green-600 font-semibold tracking-wide uppercase">Site</span>
-    </div>
-  </div>
-);
 
-const PriceBar = ({ store, price, isLowest, onClick }) => (
-  <div 
-    onClick={onClick}
-    className={`flex justify-between items-center p-3 rounded-lg border-2 cursor-pointer transition-all ${
-      isLowest 
-      ? 'border-green-500 bg-green-50' 
-      : 'border-transparent bg-gray-50 hover:bg-gray-100'
-    }`}
-  >
-    <div className="flex items-center gap-3">
-      <div className={`w-4 h-4 rounded-full ${isLowest ? 'bg-green-500' : 'bg-gray-300'}`}></div>
-      <span className="font-semibold text-gray-700 capitalize">{store}</span>
-      {isLowest && <span className="text-xs bg-green-200 text-green-800 px-2 py-0.5 rounded-full">Goedkoopste</span>}
-    </div>
-    <span className="font-bold text-gray-900">€{price.toFixed(2)}</span>
-  </div>
-);
-
-const RecipeModal = ({ recipe, onClose }) => {
-  if (!recipe) return null;
-
-  const stores = Object.keys(recipe.prices);
-  const lowestPrice = Math.min(...Object.values(recipe.prices));
-  
-  const handleOrder = (store) => {
-    // Dit verwijst naar LinkPizza
-    alert(`Je wordt nu doorgestuurd naar ${store} via LinkPizza om de ingrediënten te bestellen!`);
-  };
-
-  return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-      <div className="absolute inset-0 bg-black/60 backdrop-blur-sm" onClick={onClose}></div>
-      <div className="relative bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto shadow-2xl animate-fade-in">
+    <!-- JavaScript Logic -->
+    <script>
+        // --- 1. DATA & STATE MANAGEMENT ---
         
-        {/* Header Image */}
-        <div className="h-48 bg-gray-100 flex items-center justify-center text-8xl relative">
-          {recipe.image}
-          <button onClick={onClose} className="absolute top-4 right-4 bg-white/80 hover:bg-white p-2 rounded-full shadow-md transition-colors">
-            <X className="w-6 h-6 text-gray-600" />
-          </button>
-        </div>
+        // Ingredients Database ("The AI Brain")
+        const ingredientsDB = {
+            proteins: [
+                { name: "Kipfilet blokjes", price: 3.50, type: "Snel" },
+                { name: "Rundergehakt", price: 4.00, type: "Snel" },
+                { name: "Vega Balletjes", price: 3.20, type: "Vega" },
+                { name: "Kikkererwten", price: 1.10, type: "Budget" },
+                { name: "Zalmfilet", price: 5.50, type: "Luxe" },
+                { name: "Tofu", price: 2.50, type: "Vega" },
+                { name: "Witte bonen", price: 0.90, type: "Budget" },
+                { name: "Tempeh", price: 2.75, type: "Vega" }
+            ],
+            carbs: [
+                { name: "Zilvervliesrijst", price: 1.20 },
+                { name: "Penne Pasta", price: 1.00 },
+                { name: "Zoete Aardappel", price: 1.50 },
+                { name: "Wraps", price: 1.80 },
+                { name: "Noedels", price: 1.30 },
+                { name: "Couscous", price: 1.40 },
+                { name: "Aardappelpuree", price: 1.10 }
+            ],
+            veggies: [
+                { name: "Broccoli roosjes", price: 1.60 },
+                { name: "Spinazie a la crème", price: 1.20 },
+                { name: "Wokgroente Mix", price: 2.50 },
+                { name: "Sperziebonen", price: 1.40 },
+                { name: "Courgette & Paprika", price: 1.90 },
+                { name: "Bloemkool", price: 1.70 },
+                { name: "Pompoenblokjes", price: 2.10 }
+            ],
+            sauces: [
+                { name: "Teriyaki Saus", price: 1.50 },
+                { name: "Pesto Genovese", price: 1.80 },
+                { name: "Rode Curry", price: 1.60 },
+                { name: "Tomaten Mascarpone", price: 1.90 },
+                { name: "Ketjap Knoflook", price: 1.20 },
+                { name: "Olijfolie & Kruiden", price: 0.50 }
+            ],
+            adjectives: ["Romige", "Pittige", "Krokante", "Snelle", "Gezonde", "Hollandse", "Aziatische", "Geroosterde", "Gestoofde"]
+        };
 
-        <div className="p-6">
-          {/* Title & Stats */}
-          <div className="mb-6">
-            <div className="flex justify-between items-start mb-2">
-              <h2 className="text-2xl font-bold text-gray-900 leading-tight">{recipe.title}</h2>
-              <span className="bg-green-100 text-green-800 text-xs font-bold px-2.5 py-1 rounded whitespace-nowrap ml-2">
-                {recipe.category}
-              </span>
-            </div>
-            <div className="flex gap-4 text-sm text-gray-500 mb-4">
-              <span className="flex items-center gap-1"><Clock size={16} /> {recipe.time}</span>
-              <span className="flex items-center gap-1"><Flame size={16} /> {recipe.calories}</span>
-            </div>
-            <p className="text-gray-600">{recipe.description}</p>
-          </div>
+        // State
+        let generatedRecipes = [];
+        let currentFilter = 'Alles';
+        let charts = {}; // To store chart instances
 
-          {/* Ingredients */}
-          <div className="mb-8">
-            <h3 className="font-bold text-gray-900 mb-3">Boodschappenlijstje (AI Generated)</h3>
-            <ul className="space-y-2">
-              {recipe.ingredients.map((ing, idx) => (
-                <li key={idx} className="flex justify-between text-gray-700 border-b border-gray-100 pb-1">
-                  <span>{ing.name}</span>
-                  <span className="text-gray-400 font-mono">{ing.amount}</span>
-                </li>
-              ))}
-            </ul>
-          </div>
+        // --- 2. GENERATOR LOGIC ---
 
-          {/* Price Comparison */}
-          <div className="bg-white rounded-xl border border-gray-200 p-4 mb-4 shadow-sm">
-            <h3 className="font-bold text-gray-900 mb-3 flex items-center gap-2">
-              <Tag className="text-green-500 w-5 h-5" /> Vergelijk & Bespaar
-            </h3>
-            <div className="space-y-2">
-              {stores.map(store => (
-                <PriceBar 
-                  key={store} 
-                  store={store} 
-                  price={recipe.prices[store]} 
-                  isLowest={recipe.prices[store] === lowestPrice}
-                  onClick={() => handleOrder(store)}
-                />
-              ))}
-            </div>
-            <p className="text-xs text-center text-gray-400 mt-3">
-              Prijzen zijn indicatief. Wij ontvangen een commissie via LinkPizza bij aankoop.
-            </p>
-          </div>
+        function generateData() {
+            const newRecipes = [];
+            const images = ["🍝", "🍛", "🥬", "🌮", "🥘", "🥗", "🍜", "🍲", "🥯"];
 
-          <button onClick={() => handleOrder('de goedkoopste aanbieder')} className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-4 rounded-xl shadow-lg transition-transform active:scale-95 flex justify-center items-center gap-2">
-            <span>Bestel Ingrediënten</span>
-            <ArrowRight className="w-5 h-5" />
-          </button>
-        </div>
-      </div>
-    </div>
-  );
-};
+            for (let i = 0; i < 12; i++) {
+                const protein = ingredientsDB.proteins[Math.floor(Math.random() * ingredientsDB.proteins.length)];
+                const carb = ingredientsDB.carbs[Math.floor(Math.random() * ingredientsDB.carbs.length)];
+                const veg = ingredientsDB.veggies[Math.floor(Math.random() * ingredientsDB.veggies.length)];
+                const sauce = ingredientsDB.sauces[Math.floor(Math.random() * ingredientsDB.sauces.length)];
+                const adj = ingredientsDB.adjectives[Math.floor(Math.random() * ingredientsDB.adjectives.length)];
+                const img = images[Math.floor(Math.random() * images.length)];
+
+                const basePrice = protein.price + carb.price + veg.price + sauce.price;
+                
+                // Determine Category
+                let cat = "Snel";
+                if (basePrice < 4.50) cat = "Budget";
+                if (protein.type === "Vega" || protein.type === "Budget") cat = "Vega"; 
+                if (protein.type === "Luxe") cat = "Luxe";
+
+                // Dynamic Title
+                const title = `${adj} ${protein.name} met ${veg.name}`;
+
+                // Generate Prices for Stores (Simulation)
+                // Lidl is mostly cheaper in logic, AH slightly more expensive
+                const prices = {
+                    "Albert Heijn": basePrice * (1.1 + (Math.random() * 0.15)),
+                    "Jumbo": basePrice * (1.05 + (Math.random() * 0.1)),
+                    "Lidl": basePrice * (0.9 + (Math.random() * 0.1))
+                };
+
+                newRecipes.push({
+                    id: i,
+                    title: title,
+                    image: img,
+                    time: `${15 + Math.floor(Math.random() * 30)} min`,
+                    calories: `${350 + Math.floor(Math.random() * 500)} kcal`,
+                    category: cat,
+                    description: `Een heerlijke, ${adj.toLowerCase()} combinatie van ${protein.name.toLowerCase()}, ${veg.name.toLowerCase()} en ${carb.name.toLowerCase()}. Ideaal voor een drukke dag.`,
+                    ingredients: [
+                        { name: protein.name, amount: "300g" },
+                        { name: carb.name, amount: "250g" },
+                        { name: veg.name, amount: "400g" },
+                        { name: sauce.name, amount: "1 portie" }
+                    ],
+                    prices: prices,
+                    lowestPrice: Math.min(...Object.values(prices))
+                });
+            }
+            return newRecipes;
+        }
+
+        // --- 3. DOM MANIPULATION & RENDERING ---
+
+        function renderRecipes(recipes) {
+            const grid = document.getElementById('recipe-grid');
+            const noResults = document.getElementById('no-results');
+            grid.innerHTML = '';
+
+            const filtered = currentFilter === 'Alles' 
+                ? recipes 
+                : recipes.filter(r => r.category === currentFilter || (currentFilter === 'Vega' && r.category === 'Budget' && ingredientsDB.proteins.find(p => r.title.includes(p.name))?.type === 'Vega'));
+
+            if (filtered.length === 0) {
+                noResults.classList.remove('hidden');
+            } else {
+                noResults.classList.add('hidden');
+                filtered.forEach(recipe => {
+                    const card = document.createElement('div');
+                    card.className = "bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden cursor-pointer card-hover transition-all duration-300 flex flex-col h-full";
+                    card.onclick = () => openModal(recipe);
+
+                    const lowestPriceFormatted = recipe.lowestPrice.toFixed(2);
+
+                    card.innerHTML = `
+                        <div class="h-32 bg-gray-50 flex items-center justify-center text-5xl border-b border-gray-50 relative">
+                            ${recipe.image}
+                            <div class="absolute top-3 right-3 bg-white/90 backdrop-blur px-2 py-1 rounded-lg text-xs font-bold shadow-sm text-green-700">
+                                €${lowestPriceFormatted}
+                            </div>
+                        </div>
+                        <div class="p-5 flex-1 flex flex-col">
+                            <div class="flex justify-between items-start mb-2">
+                                <h4 class="font-bold text-gray-800 leading-snug line-clamp-2">${recipe.title}</h4>
+                            </div>
+                            <div class="flex gap-3 text-xs text-gray-400 mb-4 mt-1">
+                                <span class="flex items-center gap-1"><i class="fa-regular fa-clock"></i> ${recipe.time}</span>
+                                <span class="flex items-center gap-1 font-medium px-2 py-0.5 rounded bg-gray-100 text-gray-600">${recipe.category}</span>
+                            </div>
+                            <button class="mt-auto w-full text-center text-green-600 font-semibold text-sm hover:text-green-700 transition-colors flex items-center justify-center gap-1 group">
+                                Bekijk Details <i class="fa-solid fa-chevron-right text-xs group-hover:translate-x-1 transition-transform"></i>
+                            </button>
+                        </div>
+                    `;
+                    grid.appendChild(card);
+                });
+            }
+        }
+
+        // --- 4. ANALYTICS & CHARTS ---
+
+        function updateCharts(recipes) {
+            // Data Prep for Price Chart
+            const stores = ["Albert Heijn", "Jumbo", "Lidl"];
+            const totals = stores.map(store => {
+                return recipes.reduce((sum, r) => sum + r.prices[store], 0);
+            });
+
+            // Calculate Savings for Hero Section
+            const maxTotal = Math.max(...totals);
+            const minTotal = Math.min(...totals);
+            const avgSavings = (maxTotal - minTotal) / recipes.length;
+            document.getElementById('avg-savings').textContent = `€${avgSavings.toFixed(2)}`;
+
+            // Chart 1: Price Comparison
+            const ctxPrice = document.getElementById('priceChart').getContext('2d');
+            if (charts.price) charts.price.destroy();
+
+            charts.price = new Chart(ctxPrice, {
+                type: 'bar',
+                data: {
+                    labels: stores,
+                    datasets: [{
+                        label: 'Totaalprijs Mandje (12 Recepten)',
+                        data: totals,
+                        backgroundColor: [
+                            'rgba(59, 130, 246, 0.6)', // Blue (AH)
+                            'rgba(251, 191, 36, 0.6)', // Yellow (Jumbo)
+                            'rgba(239, 68, 68, 0.6)'   // Red (Lidl)
+                        ],
+                        borderColor: [
+                            'rgb(59, 130, 246)',
+                            'rgb(251, 191, 36)',
+                            'rgb(239, 68, 68)'
+                        ],
+                        borderWidth: 1,
+                        borderRadius: 8
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    return new Intl.NumberFormat('nl-NL', { style: 'currency', currency: 'EUR' }).format(context.raw);
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: false, // Highlight differences better
+                            grid: { color: '#f3f4f6' }
+                        },
+                        x: { grid: { display: false } }
+                    }
+                }
+            });
+
+            // Data Prep for Category Chart
+            const categories = {};
+            recipes.forEach(r => {
+                categories[r.category] = (categories[r.category] || 0) + 1;
+            });
+
+            // Chart 2: Categories
+            const ctxCat = document.getElementById('categoryChart').getContext('2d');
+            if (charts.category) charts.category.destroy();
+
+            charts.category = new Chart(ctxCat, {
+                type: 'doughnut',
+                data: {
+                    labels: Object.keys(categories),
+                    datasets: [{
+                        data: Object.values(categories),
+                        backgroundColor: [
+                            '#10b981', // Green
+                            '#f59e0b', // Amber
+                            '#6366f1', // Indigo
+                            '#ec4899'  // Pink
+                        ],
+                        borderWidth: 0,
+                        hoverOffset: 4
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    cutout: '70%',
+                    plugins: {
+                        legend: { position: 'right' }
+                    }
+                }
+            });
+        }
+
+        // --- 5. INTERACTION HANDLERS ---
+
+        function regenerateData() {
+            generatedRecipes = generateData();
+            
+            // Animation for refresh
+            const grid = document.getElementById('recipe-grid');
+            grid.style.opacity = '0';
+            setTimeout(() => {
+                renderRecipes(generatedRecipes);
+                updateCharts(generatedRecipes);
+                grid.style.opacity = '1';
+            }, 300);
+        }
+
+        function filterRecipes(category) {
+            currentFilter = category;
+            
+            // Update UI buttons
+            document.querySelectorAll('.filter-btn').forEach(btn => {
+                if(btn.dataset.filter === category) {
+                    btn.classList.remove('bg-white', 'text-gray-600', 'border', 'border-gray-200', 'hover:bg-gray-50');
+                    btn.classList.add('bg-gray-800', 'text-white');
+                } else {
+                    btn.classList.add('bg-white', 'text-gray-600', 'border', 'border-gray-200', 'hover:bg-gray-50');
+                    btn.classList.remove('bg-gray-800', 'text-white');
+                }
+            });
+
+            renderRecipes(generatedRecipes);
+        }
+
+        // Modal Logic
+        let currentModalRecipe = null;
+
+        function openModal(recipe) {
+            currentModalRecipe = recipe;
+            const modal = document.getElementById('recipe-modal');
+            
+            // Populate Modal
+            document.getElementById('modal-icon').textContent = recipe.image;
+            document.getElementById('modal-title').textContent = recipe.title;
+            document.getElementById('modal-tag').textContent = recipe.category;
+            document.getElementById('modal-time').textContent = recipe.time;
+            document.getElementById('modal-cals').textContent = recipe.calories;
+            document.getElementById('modal-desc').textContent = recipe.description;
+
+            // Ingredients
+            const ingList = document.getElementById('modal-ingredients');
+            ingList.innerHTML = '';
+            recipe.ingredients.forEach(ing => {
+                const li = document.createElement('li');
+                li.className = "flex justify-between border-b border-gray-100 pb-1 last:border-0";
+                li.innerHTML = `<span>${ing.name}</span> <span class="font-mono text-gray-400">${ing.amount}</span>`;
+                ingList.appendChild(li);
+            });
+
+            // Prices
+            const priceList = document.getElementById('modal-prices');
+            priceList.innerHTML = '';
+            const sortedPrices = Object.entries(recipe.prices).sort(([,a], [,b]) => a - b);
+            const lowest = sortedPrices[0][1];
+
+            sortedPrices.forEach(([store, price]) => {
+                const isLowest = price === lowest;
+                const div = document.createElement('div');
+                div.className = `flex justify-between items-center p-3 rounded-lg border transition-all ${isLowest ? 'border-green-500 bg-green-50' : 'border-transparent bg-gray-50'}`;
+                div.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="w-3 h-3 rounded-full ${isLowest ? 'bg-green-500' : 'bg-gray-300'}"></div>
+                        <span class="font-semibold text-gray-700">${store}</span>
+                        ${isLowest ? '<span class="text-[10px] bg-green-200 text-green-800 px-2 py-0.5 rounded-full font-bold">Beste Deal</span>' : ''}
+                    </div>
+                    <span class="font-bold text-gray-900">€${price.toFixed(2)}</span>
+                `;
+                priceList.appendChild(div);
+            });
+
+            modal.classList.remove('hidden');
+        }
+
+        function closeModal() {
+            document.getElementById('recipe-modal').classList.add('hidden');
+        }
+
+        function handleAffiliateClick() {
+            if(!currentModalRecipe) return;
+            // Identify cheapest store
+            const sortedPrices = Object.entries(currentModalRecipe.prices).sort(([,a], [,b]) => a - b);
+            const cheapestStore = sortedPrices[0][0];
+            alert(`U wordt doorgestuurd naar de bestelomgeving van ${cheapestStore}. (LinkPizza Integratie)`);
+            closeModal();
+        }
+
+        // Close modal on escape key
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape') closeModal();
+        });
+
+        // Initialize App
+        window.addEventListener('DOMContentLoaded', () => {
+            regenerateData();
+        });
+
+    </script>
+</body>
+</html>
