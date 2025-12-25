@@ -24,6 +24,20 @@
             0%, 100% { opacity: 1; }
             50% { opacity: .5; }
         }
+        /* Custom scrollbar voor legal modal */
+        .legal-scroll::-webkit-scrollbar {
+            width: 8px;
+        }
+        .legal-scroll::-webkit-scrollbar-track {
+            background: #f1f1f1; 
+        }
+        .legal-scroll::-webkit-scrollbar-thumb {
+            background: #888; 
+            border-radius: 4px;
+        }
+        .legal-scroll::-webkit-scrollbar-thumb:hover {
+            background: #555; 
+        }
     </style>
 </head>
 <body class="bg-gray-50">
@@ -42,6 +56,42 @@
     <script type="text/babel">
         // Haal de benodigde functies uit React
         const { useState, useEffect, useMemo } = React;
+
+        // --- JURIDISCHE TEKSTEN (HET FORT) ---
+        const LEGAL_TEXTS = {
+            TERMS: (
+                <div className="space-y-4 text-sm text-gray-700">
+                    <h3 className="font-bold text-lg text-gray-900">Algemene Voorwaarden WeekHap</h3>
+                    <p><strong>Artikel 1. Aansprakelijkheid & Gezondheid</strong><br/>
+                    WeekHap levert recepten en weekmenu's ter inspiratie. Wij zijn geen artsen of diëtisten. Het volgen van onze menu's is volledig op eigen risico. WeekHap is niet aansprakelijk voor enige schade, direct of indirect, die voortvloeit uit het gebruik van onze recepten, inclusief maar niet beperkt tot allergische reacties, gewichtstoename of gezondheidsklachten.</p>
+                    
+                    <p><strong>Artikel 2. Boodschappen & Derden</strong><br/>
+                    WeekHap verkoopt zelf geen voedingsmiddelen. Wij bieden slechts functionaliteit om boodschappenlijsten door te sturen naar derden (zoals supermarkten). WeekHap is nimmer verantwoordelijk voor de kwaliteit, levering, prijs of beschikbaarheid van producten bij deze derde partijen.</p>
+                    
+                    <p><strong>Artikel 3. Betaling & Abonnement</strong><br/>
+                    Bij het aangaan van een abonnement gaat u akkoord met maandelijkse afschrijving. Opzeggen kan maandelijks. Restitutie van reeds betaalde periodes is niet mogelijk, tenzij wettelijk verplicht.</p>
+                    
+                    <p><strong>Artikel 4. Intellectueel Eigendom</strong><br/>
+                    Alle recepten, teksten en afbeeldingen zijn eigendom van WeekHap. Het is streng verboden deze materialen te delen, door te verkopen of openbaar te maken zonder schriftelijke toestemming. Bij overtreding wordt een boete van €500 per dag opgelegd.</p>
+                    
+                    <p><strong>Artikel 5. Beperking Aansprakelijkheid</strong><br/>
+                    Indien WeekHap toch aansprakelijk mocht zijn, is deze aansprakelijkheid beperkt tot maximaal het bedrag van het door de gebruiker betaalde abonnement over de afgelopen maand.</p>
+                </div>
+            ),
+            PRIVACY: (
+                <div className="space-y-4 text-sm text-gray-700">
+                    <h3 className="font-bold text-lg text-gray-900">Privacyverklaring</h3>
+                    <p><strong>1. Gegevensverwerking</strong><br/>
+                    Wij verwerken uw e-mailadres en betaalgegevens enkel om onze diensten (het sturen van menu's) uit te voeren. Wij verkopen uw gegevens nooit door aan derden.</p>
+                    
+                    <p><strong>2. Cookies</strong><br/>
+                    Wij gebruiken functionele cookies om de site te laten werken. Daarnaast gebruiken wij partner-links (affiliate) om te meten of u via ons boodschappen bestelt. Hierbij worden geen persoonlijke gegevens met de supermarkt gedeeld, enkel een anonieme tracking code.</p>
+                    
+                    <p><strong>3. Bewaartermijn</strong><br/>
+                    Wij bewaren uw gegevens zolang u actief gebruiker bent. Op verzoek verwijderen wij al uw data binnen 30 dagen.</p>
+                </div>
+            )
+        };
 
         // --- ICON SETUP ---
         const lucideLib = window.lucideReact || window.lucide || {};
@@ -77,7 +127,8 @@
             Flame = IconFallback,
             Euro = IconFallback,
             Store = IconFallback,
-            Mail = IconFallback
+            Mail = IconFallback,
+            ShieldCheck = IconFallback
         } = lucideLib;
 
         // --- UTILS: Datum & Week Logica ---
@@ -145,11 +196,40 @@
             );
         }
 
+        // --- LEGAL MODAL COMPONENT ---
+        function LegalModal({ content, onClose }) {
+            return (
+                <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-[60] flex items-center justify-center p-4 animate-in">
+                    <div className="bg-white rounded-2xl w-full max-w-2xl max-h-[80vh] shadow-2xl flex flex-col">
+                        <div className="bg-gray-50 p-4 border-b flex justify-between items-center rounded-t-2xl">
+                            <div className="flex items-center gap-2 text-gray-900 font-bold">
+                                <ShieldCheck className="w-5 h-5 text-green-600" /> Juridische Informatie
+                            </div>
+                            <button onClick={onClose} className="text-gray-400 hover:text-gray-600">
+                                <X className="w-5 h-5" />
+                            </button>
+                        </div>
+                        <div className="p-6 overflow-y-auto legal-scroll">
+                            {content}
+                        </div>
+                        <div className="bg-gray-50 p-4 border-t text-right rounded-b-2xl">
+                            <button onClick={onClose} className="bg-gray-900 text-white px-6 py-2 rounded-lg font-medium hover:bg-black transition">
+                                Ik snap het
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            );
+        }
+
         function App() {
             const [hasPaid, setHasPaid] = useState(false);
             const [showPaymentModal, setShowPaymentModal] = useState(false);
             const [selectedPlan, setSelectedPlan] = useState(PRICING_PLANS.SINGLE);
             const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+            
+            // Legal State
+            const [activeLegalDoc, setActiveLegalDoc] = useState(null); // 'TERMS' or 'PRIVACY'
             
             const currentWeekInfo = useMemo(() => getCurrentWeekData(), []);
 
@@ -178,13 +258,22 @@
 
             if (hasPaid) {
                 return (
-                    <DashboardView 
-                        weeklyMenu={weeklyMenu} 
-                        shoppingList={shoppingList} 
-                        reviews={initialReviews}
-                        setHasPaid={setHasPaid} 
-                        weekInfo={currentWeekInfo}
-                    />
+                    <>
+                        <DashboardView 
+                            weeklyMenu={weeklyMenu} 
+                            shoppingList={shoppingList} 
+                            reviews={initialReviews}
+                            setHasPaid={setHasPaid} 
+                            weekInfo={currentWeekInfo}
+                        />
+                        {activeLegalDoc && (
+                            <LegalModal 
+                                content={LEGAL_TEXTS[activeLegalDoc]} 
+                                onClose={() => setActiveLegalDoc(null)} 
+                            />
+                        )}
+                        {/* Dashboard Footer needs to be able to open legal docs too */}
+                    </>
                 );
             }
 
@@ -447,9 +536,9 @@
                                 <span className="font-bold text-xl text-white">WeekHap</span>
                             </div>
                             <div className="flex gap-6 text-sm">
-                                <a href="#" className="hover:text-white">Algemene Voorwaarden</a>
-                                <a href="#" className="hover:text-white">Privacy</a>
-                                <a href="#" className="hover:text-white">Contact</a>
+                                <button onClick={() => setActiveLegalDoc('TERMS')} className="hover:text-white transition">Algemene Voorwaarden</button>
+                                <button onClick={() => setActiveLegalDoc('PRIVACY')} className="hover:text-white transition">Privacy</button>
+                                <a href="mailto:service@weekhap.nl" className="hover:text-white transition">Contact</a>
                             </div>
                             <div className="flex gap-4">
                                 <Instagram className="w-5 h-5 cursor-pointer hover:text-white" />
@@ -457,6 +546,14 @@
                             </div>
                         </div>
                     </footer>
+
+                    {/* Legal Modal Display */}
+                    {activeLegalDoc && (
+                        <LegalModal 
+                            content={LEGAL_TEXTS[activeLegalDoc]} 
+                            onClose={() => setActiveLegalDoc(null)} 
+                        />
+                    )}
 
                     {/* Payment Modal */}
                     {showPaymentModal && (
@@ -495,6 +592,10 @@
                                             </select>
                                         </div>
                                         
+                                        <div className="text-xs text-gray-500 mb-4">
+                                            Door te betalen gaat u akkoord met de <button onClick={() => {setShowPaymentModal(false); setActiveLegalDoc('TERMS');}} className="text-green-600 underline">Algemene Voorwaarden</button>.
+                                        </div>
+
                                         <button type="submit" className="w-full bg-green-600 hover:bg-green-700 text-white font-bold py-3 rounded-lg transition flex items-center justify-center gap-2">
                                             <Lock className="w-4 h-4" /> Betalen €{selectedPlan.price}
                                         </button>
@@ -803,6 +904,16 @@
                 ah: 'bg-blue-500 hover:bg-blue-600 text-white'
             };
 
+            const handleShopClick = () => {
+                // --- STAP 2: HIER KOMT JOUW LINKPIZZA LINK ---
+                // Vervang de URL hieronder met jouw LinkPizza affiliate link naar Jumbo of AH
+                const link = supermarket === 'jumbo' 
+                    ? "https://linkpizza.com/jumbo-affiliate-link" 
+                    : "https://linkpizza.com/ah-affiliate-link";
+                
+                window.open(link, '_blank');
+            };
+
             if(step === 'form') {
                 return (
                     <div className="max-w-2xl mx-auto animate-in">
@@ -979,6 +1090,8 @@
             const [day, setDay] = useState(weekInfo ? weekInfo.todayName : "Maandag");
             const [isGenerating, setIsGenerating] = useState(false);
             const [generatedRecipe, setGeneratedRecipe] = useState(null);
+            
+            // Diet state
             const [diet, setDiet] = useState({
                 vegetarian: false,
                 vegan: false,
